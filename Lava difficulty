@@ -1,0 +1,82 @@
+-- LavaController.lua
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local Lava = workspace:WaitForChild("Lava")
+
+local Difficulties = {
+    Easy = {
+        RiseSpeed = 0.5, 
+        PauseChance = 0.3, 
+        PauseDurationRange = {2, 4}, 
+    },
+    Normal = {
+        RiseSpeed = 1.5,
+        PauseChance = 0.1,
+        PauseDurationRange = {1, 2},
+    },
+    Hard = {
+        RiseSpeed = 2.5,
+        PauseChance = 0,
+        PauseDurationRange = {0, 0},
+    },
+    Extreme = {
+        RiseSpeed = 4,
+        PauseChance = 0,
+        PauseDurationRange = {0, 0},
+    }
+}
+
+local CurrentDifficulty = "Easy"
+local IsPaused = false
+local Rising = true
+local LastUpdate = tick()
+
+local function moveLava(deltaTime)
+    if not Rising or IsPaused then return end
+    
+    local settings = Difficulties[CurrentDifficulty]
+    local riseAmount = settings.RiseSpeed * deltaTime
+
+    local targetPosition = Lava.Position + Vector3.new(0, riseAmount, 0)
+
+    Lava.Position = targetPosition
+end
+
+local function checkPause()
+    local settings = Difficulties[CurrentDifficulty]
+    
+    if settings.PauseChance > 0 and math.random() < settings.PauseChance then
+        IsPaused = true
+        local duration = math.random(settings.PauseDurationRange[1], settings.PauseDurationRange[2])
+        task.delay(duration, function()
+            IsPaused = false
+        end)
+    end
+end
+
+RunService.Heartbeat:Connect(function(deltaTime)
+    if Rising then
+        moveLava(deltaTime)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if Rising and not IsPaused then
+            checkPause()
+        end
+    end
+end)
+
+local function setDifficulty(newDifficulty)
+    if Difficulties[newDifficulty] then
+        CurrentDifficulty = newDifficulty
+        print("Difficulty changed to:", newDifficulty)
+    else
+        warn("Invalid difficulty:", newDifficulty)
+    end
+end
+
+_G.SetLavaDifficulty = setDifficulty
