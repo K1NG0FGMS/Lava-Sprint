@@ -1,0 +1,101 @@
+LocalScript, VotingUI:
+local list = require(game.Workspace.Map_List)
+
+script.Parent.Map_1.TextLabel.Text = list.Map_1.Title
+script.Parent.Map_2.TextLabel.Text = list.Map_2.Title
+script.Parent.Map_3.TextLabel.Text = list.Map_3.Title
+script.Parent.Map_4.TextLabel.Text = list.Map_4.Title
+script.Parent.Map_5.TextLabel.Text = list.Map_5.Title
+script.Parent.Map_6.TextLabel.Text = list.Map6.Title
+
+script.Parent.Voted.Event:Connect(function(instance)
+    local selected2 = string.gsub(instance.Name, "Map", "")
+end)
+
+game.ReplicatedStorage.Maps.VoteMap.OnClientEvent:Connect(function(NumOfMap1, NumOfMap2, NumOfMap3)
+    local Map1Frame = script.Parent:FindFirstChild("Map"..NumOfMap1)
+    local Map2Frame = script.Parent:FindFirstChild("Map"..NumOfMap2)
+    local Map3Frame = script.Parent:FindFirstChild("Map"..NumOfMap3)
+
+    local Selected
+
+    if Map1Frame and Map2Frame and Map3Frame then
+        Map1Frame.Visible = true
+        Map2Frame.Visible = true
+        Map3Frame.Visible = true
+    end
+
+    script.Parent.Parent.Visible = true
+
+    script.Parent.Voted.CanVote.Value = true
+
+    local OnVoteConnection
+    OnVoteConnection = script.Parent.Voted.Event:Connect(function(VoteFrame)
+        local NameGsub = string.gsub(VoteFrame.Name, "Map", "")
+
+        if Selected == nil then
+            game.ReplicatedStorage.Maps.ChangeVoteValue:FireServer(tonumber(NameGsub), false)
+        elseif Selected ~= tonumber(NameGsub) then
+            game.ReplicatedStorage.Maps.ChangeVoteValue:FireServer(tonumber(NameGsub), Selected)
+        end
+
+        Selected = tonumber(NameGsub)
+    end)
+
+    local ChangeVoteCountConnection
+    ChangeVoteCountConnection = game.ReplicatedStorage.Maps.ChangeVoteValue.OnClientEvent:Connect(function(FrameToChange1, FrameToChange2)
+        if FrameToChange2 == false then
+            local Frame1 = script.Parent:FindFirstChild("Map"..tostring(FrameToChange1))
+
+            if Frame1 then
+                local Votes = tonumber(Frame1.Votes.Text)
+                Frame1.Votes.Text = tostring(Votes + 1)
+            end
+        elseif FrameToChange2 ~= false then
+            local Frame1 = script.Parent:FindFirstChild("Map"..tostring(FrameToChange1))
+            local Frame2 = script.Parent:FindFirstChild("Map_"..tostring(FrameToChange2))
+
+            if Frame1 and Frame2 then
+                local Votes1 = tonumber(Frame1.Votes.Text)
+                Frame1.Votes.Text = tostring(Votes1 + 1)
+
+                local Votes2 = tonumber(Frame2.Votes.Text)
+                Frame2.Votes.Text = tostring(Votes2 - 1)
+            end
+        end
+    end)
+
+    local VoteEndedConnection
+    VoteEndedConnection = game.ReplicatedStorage.Maps.VoteEnded.OnClientEvent:Connect(function()
+        if Selected == nil then
+            local RandomNumber = math.random(1, 3)
+
+            if RandomNumber == 1 then
+                Selected = NumOfMap1
+            elseif RandomNumber == 2 then
+                Selected = NumOfMap2
+            elseif RandomNumber == 3 then
+                Selected = NumOfMap3
+            end
+        end
+
+        script.Parent.Parent.Visible = false
+
+        Map1Frame.Visible = false
+        Map2Frame.Visible = false
+        Map3Frame.Visible = false
+
+        for i,v in pairs(script.Parent:GetChildren()) do
+            if v:IsA("Frame") then
+                v.TextButton.Transparency = 1
+                v.Votes.Text = "0"
+            end
+        end
+
+        game.ReplicatedStorage.Maps.VoteEnded.SendVote:FireServer(Selected)
+
+        OnVoteConnection:Disconnect()
+        ChangeVoteCountConnection:Disconnect()
+        VoteEndedConnection:Disconnect()
+    end)
+end)
