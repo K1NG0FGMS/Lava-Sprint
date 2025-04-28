@@ -1,0 +1,100 @@
+local DSS = game:GetService("DataStoreService")
+local MPS = game:GetService("MarketplaceService")
+
+local Owned = DSS:GetDataStore("Owned")
+local LimitedOwned = DSS:GetDataStore("LimitedOwned")
+
+local Tags = {}
+
+game.Players.PlayerAdded:Connect(function(plr)
+	local data
+	local success,_ = pcall(function()
+		data = Owned:GetAsync(plr.UserId)
+	end)
+	
+	if success then
+		if not data then
+			Owned:SetAsync(plr.UserId, require(game.ServerStorage.OwnedTemplate))
+		end
+	end
+	
+	local value = {ID = plr.UserId, Name = false, Ignore = true}
+	table.insert(Tags, value)
+	
+	LimitedOwned:SetAsync(plr.UserId, {EA280423 = true})
+end)
+
+game.ReplicatedStorage.Shop.RequestData.Event:Connect(function(plr)
+	local data
+	local success,_ = pcall(function()
+		data = Owned:GetAsync(plr.UserId)
+	end)
+	
+	if success then
+		if data then
+			for i,v in pairs(data["Tags"]) do
+				if v["Owned"] == true then
+					game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Tag", v["Name"])
+					game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Tag", v["Name"])
+				end
+			end
+			for i,v in pairs(data["Effects"]) do
+				if v["Owned"] == true then
+					game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Effect", v["Name"])
+					game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Effect", v["Name"])
+				end
+			end
+			for i,v in pairs(data["Trails"]) do
+				if v["Owned"] == true then
+					game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Trail", v["Name"])
+					game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Trail", v["Name"])
+				end
+			end
+		end
+	end
+	
+	if MPS:UserOwnsGamePassAsync(plr.UserId, 144391738) then
+		game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Effect", "FirePass")
+		game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Effect", "FirePass")
+	end
+	
+	if MPS:UserOwnsGamePassAsync(plr.UserId, 137933445) then
+		game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Effect", "Inferno")
+		game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Effect", "Inferno")
+	
+		game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Trail", "Inferno")
+		game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Trail", "Inferno")
+	
+		game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Tag", "Inferno")
+		game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Tag", "Inferno")
+	end
+	
+	if MPS:UserOwnsGamePassAsync(plr.UserId, 144391410) then
+		game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Effect", "VIP")
+		game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Effect", "VIP")
+		
+		game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Trail", "VIP")
+		game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Trail", "VIP")
+		
+		game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Tag", "VIP")
+		game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Tag", "VIP")
+	end
+	
+	if MPS:UserOwnsGamePassAsync(plr.UserId, 157037458) then
+		game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Effect", "Skull")
+		game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Effect", "Skull")
+		
+		game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Trail", "Skull")
+		game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Trail", "Skull")
+	
+		game.ReplicatedStorage.Shop.LoadItem:FireClient(plr, "Tag", "Skull")
+		game.ReplicatedStorage.Shop.LoadItem.Server:Fire(plr, "Tag", "Skull")
+	end
+end)
+
+game.ReplicatedStorage.Shop.ItemBought.OnServerEvent:Connect(function(plr, Category, Name)
+	local data
+	
+	local success,_ = pcall(function()
+		data = Owned:GetAsync(plr.UserId)
+	end)
